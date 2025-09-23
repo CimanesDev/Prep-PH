@@ -87,10 +87,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">P</span>
-                </div>
-                <span className="text-xl font-semibold text-foreground">Prep</span>
+                <Link to="/" className="text-xl font-semibold text-foreground hover:opacity-90">Prep PH</Link>
               </div>
             </div>
 
@@ -132,8 +129,8 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">Sessions Completed</p>
                   <p className="text-2xl font-bold text-foreground">{user.sessionsCompleted}</p>
                 </div>
-                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Target className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                  <Target className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -146,8 +143,8 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">Average Score</p>
                   <p className="text-2xl font-bold text-foreground">{user.averageScore}%</p>
                 </div>
-                <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-6 w-6 text-success" />
+                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -160,8 +157,8 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
                   <p className="text-2xl font-bold text-foreground">{user.streak} days</p>
                 </div>
-                <div className="h-12 w-12 bg-warning/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-warning" />
+                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -174,8 +171,8 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">This Month</p>
                   <p className="text-2xl font-bold text-foreground">4</p>
                 </div>
-                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -237,7 +234,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Progress & Quick Actions */}
+          {/* Progress */}
           <div className="space-y-6">
             {/* Progress Chart */}
             <Card>
@@ -266,38 +263,10 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common practice scenarios</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link to="/onboarding" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Target className="mr-2 h-4 w-4" />
-                    Same Role Practice
-                  </Button>
-                </Link>
-                <Link to="/onboarding" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Senior Level Practice
-                  </Button>
-                </Link>
-                <Link to="/onboarding" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Different Field
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
             {/* Tips */}
             <Card>
               <CardHeader>
-                <CardTitle>💡 Today's Tip</CardTitle>
+                <CardTitle>Today's Tip</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground leading-relaxed">

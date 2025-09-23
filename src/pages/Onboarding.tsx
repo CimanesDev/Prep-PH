@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Upload, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ const Onboarding = () => {
   const [field, setField] = useState("");
   const [role, setRole] = useState("");
   const [level, setLevel] = useState("");
+  const [roleQuery, setRoleQuery] = useState("");
   
   const navigate = useNavigate();
 
@@ -31,7 +32,16 @@ const Onboarding = () => {
     "Sales",
     "Marketing",
     "Finance",
-    "Consulting"
+    "Consulting",
+    // Philippines-focused categories
+    "BPO / Call Center",
+    "Hospitality & Food Service",
+    "Retail & Merchandising",
+    "Construction & Skilled Trades",
+    "Transportation & Delivery",
+    "Healthcare & Caregiving",
+    "Education & Tutoring",
+    "Government & Admin"
   ];
 
   const roles = {
@@ -42,8 +52,17 @@ const Onboarding = () => {
     "Sales": ["Account Executive", "Sales Development Representative", "Account Manager", "Sales Manager"],
     "Marketing": ["Digital Marketing Manager", "Content Marketing Manager", "Growth Marketing Manager", "Brand Manager"],
     "Finance": ["Financial Analyst", "Investment Banking Analyst", "Corporate Development", "Finance Manager"],
-    "Consulting": ["Management Consultant", "Strategy Consultant", "Business Analyst", "Operations Consultant"]
-  };
+    "Consulting": ["Management Consultant", "Strategy Consultant", "Business Analyst", "Operations Consultant"],
+    // PH market roles
+    "BPO / Call Center": ["Customer Service Representative", "Technical Support Representative", "Chat/Email Support", "Team Leader"],
+    "Hospitality & Food Service": ["Service Crew", "Waiter/Waitress", "Cashier", "Barista", "Cook", "Kitchen Staff", "Restaurant Supervisor", "Restaurant Manager", "Hotel Front Desk", "Housekeeping"],
+    "Retail & Merchandising": ["Sales Associate", "Store Crew", "Cashier", "Visual Merchandiser", "Stock Clerk", "Store Supervisor"],
+    "Construction & Skilled Trades": ["Construction Laborer", "Carpenter", "Electrician", "Plumber", "Welder", "Mason", "Foreman"],
+    "Transportation & Delivery": ["Delivery Rider", "Motorcycle Courier", "Car/Van Driver", "Truck Driver", "Dispatcher"],
+    "Healthcare & Caregiving": ["Nurse", "Nursing Assistant", "Caregiver", "Medical Receptionist", "Pharmacy Assistant"],
+    "Education & Tutoring": ["Tutor", "English Teacher (ESL)", "Teacher's Aide", "Private Tutor"],
+    "Government & Admin": ["Administrative Assistant", "Office Clerk", "Records Assistant", "Barangay Staff"]
+  } as const;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,11 +90,17 @@ const Onboarding = () => {
     }
   };
 
+  const handleSkip = () => {
+    if (step < 4) {
+      setStep(step + 1);
+    }
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
-        return (resumeData.type === "upload" && resumeData.filename) || 
-               (resumeData.type === "text" && resumeData.content.trim().length > 50);
+        // Resume is optional; allow proceeding without input
+        return true;
       case 2:
         return field !== "";
       case 3:
@@ -93,7 +118,7 @@ const Onboarding = () => {
         return (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Upload your resume</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Upload your resume (optional)</h2>
               <p className="text-muted-foreground">
                 Share your background so we can generate personalized interview questions
               </p>
@@ -146,6 +171,9 @@ const Onboarding = () => {
                 </CardContent>
               </Card>
             </div>
+            <div className="flex items-center justify-center">
+              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
+            </div>
           </div>
         );
 
@@ -159,18 +187,31 @@ const Onboarding = () => {
               </p>
             </div>
 
-            <div className="max-w-md mx-auto">
-              <Label htmlFor="field">Field</Label>
-              <Select value={field} onValueChange={setField}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Choose your field" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fields.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="max-w-2xl mx-auto space-y-3">
+              <Label className="inline-block">Field</Label>
+              <Input
+                placeholder="Type your field (e.g., Service, BPO, Engineering)"
+                value={field}
+                onChange={(e) => setField(e.target.value)}
+              />
+              <div className="text-xs text-muted-foreground">Suggestions</div>
+              <div className="flex flex-wrap gap-2">
+                {fields.slice(0, 12).map((f) => (
+                  <Button
+                    key={f}
+                    type="button"
+                    variant={field === f ? "default" : "outline"}
+                    className={`${field === f ? "" : "border-border/50"}`}
+                    onClick={() => setField(f)}
+                  >
+                    {f}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center">
+              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
             </div>
           </div>
         );
@@ -185,42 +226,78 @@ const Onboarding = () => {
               </p>
             </div>
 
-            <div className="max-w-md mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6">
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Choose your target role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {field && roles[field as keyof typeof roles]?.map((r) => (
-                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                <Input
+                  aria-label="Search roles"
+                  placeholder="Search roles (e.g., Service Crew, CSR, Frontend Developer)"
+                  className="mt-2"
+                  value={roleQuery}
+                  onChange={(e) => setRoleQuery(e.target.value)}
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(field ? (roles[field as keyof typeof roles] || []) : [])
+                    .filter((r: string) => r.toLowerCase().includes(roleQuery.toLowerCase()))
+                    .slice(0, 24)
+                    .map((r: string) => (
+                      <Button
+                        key={r}
+                        type="button"
+                        size="sm"
+                        variant={role === r ? "default" : "outline"}
+                        className={`text-sm ${role === r ? "" : "border-border/50"}`}
+                        onClick={() => setRole(r)}
+                      >
+                        {r}
+                      </Button>
                     ))}
-                  </SelectContent>
-                </Select>
+                  {roleQuery.trim().length > 0 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={role === roleQuery ? "default" : "outline"}
+                      className={`text-sm ${role === roleQuery ? "" : "border-border/50"}`}
+                      onClick={() => setRole(roleQuery.trim())}
+                      aria-label={`Use ${roleQuery} as role`}
+                    >
+                      Use “{roleQuery.trim()}”
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div>
                 <Label>Experience Level</Label>
-                <RadioGroup value={level} onValueChange={setLevel} className="mt-3">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="intern" id="intern" />
-                    <Label htmlFor="intern">Intern / Entry Level</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="junior" id="junior" />
-                    <Label htmlFor="junior">Junior (1-3 years)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="mid" id="mid" />
-                    <Label htmlFor="mid">Mid-level (3-7 years)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="senior" id="senior" />
-                    <Label htmlFor="senior">Senior (7+ years)</Label>
-                  </div>
-                </RadioGroup>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[
+                    { value: "internship", label: "Internship" },
+                    { value: "entry", label: "Entry" },
+                    { value: "junior", label: "Junior" },
+                    { value: "mid", label: "Mid" },
+                    { value: "senior", label: "Senior" },
+                    { value: "supervisor", label: "Supervisor" },
+                    { value: "manager", label: "Manager" },
+                  ].map((opt) => (
+                    <Button
+                      key={opt.value}
+                      type="button"
+                      size="sm"
+                      variant={level === opt.value ? "default" : "outline"}
+                      className={`text-sm ${level === opt.value ? "" : "border-border/50"}`}
+                      onClick={() => setLevel(opt.value)}
+                      aria-label={opt.label}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
+              
+            </div>
+
+            <div className="flex items-center justify-center">
+              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
             </div>
           </div>
         );
@@ -241,7 +318,9 @@ const Onboarding = () => {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Resume</p>
                     <p className="font-medium">
-                      {resumeData.type === "upload" ? resumeData.filename : "Text content provided"}
+                      {resumeData.type === "upload"
+                        ? (resumeData.filename || "Not provided")
+                        : (resumeData.content.trim().length > 0 ? "Text content provided" : "Not provided")}
                     </p>
                   </div>
                   <div>
@@ -283,10 +362,7 @@ const Onboarding = () => {
             Back to dashboard
           </Link>
           <div className="flex items-center space-x-2">
-            <div className="h-6 w-6 bg-primary rounded flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xs">P</span>
-            </div>
-            <span className="text-lg font-semibold text-foreground">Prep</span>
+            <Link to="/" className="text-lg font-semibold text-foreground hover:opacity-90">Prep PH</Link>
           </div>
         </div>
 

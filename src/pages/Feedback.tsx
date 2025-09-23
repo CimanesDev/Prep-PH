@@ -59,12 +59,7 @@ const Feedback = () => {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to interview
               </Link>
-              <div className="flex items-center space-x-2">
-                <div className="h-6 w-6 bg-primary rounded flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-xs">P</span>
-                </div>
-                <span className="text-lg font-semibold text-foreground">Prep</span>
-              </div>
+              <Link to="/" className="text-lg font-semibold text-foreground hover:opacity-90">Prep PH</Link>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -91,15 +86,13 @@ const Feedback = () => {
                 Here's your personalized feedback for the {sessionData.role} interview
               </p>
             </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2">
-              Grade: {sessionData.overallGrade}
-            </Badge>
+            <div className="text-sm text-muted-foreground">Grade: <span className="font-medium text-foreground">{sessionData.overallGrade}</span></div>
           </div>
 
           <div className="grid md:grid-cols-4 gap-4 mb-8">
             <Card>
               <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-primary">{sessionData.starScore}%</p>
+                <p className="text-2xl font-bold text-foreground">{sessionData.starScore}%</p>
                 <p className="text-sm text-muted-foreground">STAR Score</p>
               </CardContent>
             </Card>
@@ -129,7 +122,7 @@ const Feedback = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <TrendingUp className="mr-2 h-5 w-5 text-primary" />
+                <TrendingUp className="mr-2 h-5 w-5 text-foreground" />
                 STAR Framework Analysis
               </CardTitle>
               <CardDescription>
@@ -172,9 +165,7 @@ const Feedback = () => {
               <div className="pt-4 border-t border-border">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">Overall STAR Score</span>
-                  <Badge variant="secondary" className="text-base">
-                    {sessionData.starScore}%
-                  </Badge>
+                  <span className="text-base font-semibold">{sessionData.starScore}%</span>
                 </div>
               </div>
             </CardContent>
@@ -184,8 +175,8 @@ const Feedback = () => {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-success">
-                  <CheckCircle className="mr-2 h-5 w-5" />
+                <CardTitle className="flex items-center">
+                  <CheckCircle className="mr-2 h-5 w-5 text-foreground" />
                   Top Strengths
                 </CardTitle>
               </CardHeader>
@@ -193,7 +184,7 @@ const Feedback = () => {
                 <ul className="space-y-3">
                   {sessionData.strengths.map((strength, index) => (
                     <li key={index} className="flex items-start">
-                      <CheckCircle className="mr-2 h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="mr-2 h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{strength}</span>
                     </li>
                   ))}
@@ -203,8 +194,8 @@ const Feedback = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-warning">
-                  <AlertCircle className="mr-2 h-5 w-5" />
+                <CardTitle className="flex items-center">
+                  <AlertCircle className="mr-2 h-5 w-5 text-foreground" />
                   Areas for Improvement
                 </CardTitle>
               </CardHeader>
@@ -212,7 +203,7 @@ const Feedback = () => {
                 <ul className="space-y-3">
                   {sessionData.improvements.map((improvement, index) => (
                     <li key={index} className="flex items-start">
-                      <AlertCircle className="mr-2 h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                      <AlertCircle className="mr-2 h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{improvement}</span>
                     </li>
                   ))}
@@ -240,13 +231,13 @@ const Feedback = () => {
 
             <div>
               <h4 className="font-semibold text-foreground mb-3">Improved STAR Version:</h4>
-              <div className="p-4 bg-primary/5 rounded-lg border-l-4 border-primary">
+              <div className="p-4 bg-muted rounded-lg border-l-4 border-muted-foreground">
                 <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: sampleRewrite.improved }} />
               </div>
             </div>
 
-            <div className="flex items-center p-4 bg-success/10 rounded-lg border border-success/20">
-              <CheckCircle className="mr-3 h-5 w-5 text-success flex-shrink-0" />
+            <div className="flex items-center p-4 bg-muted rounded-lg border border-border">
+              <CheckCircle className="mr-3 h-5 w-5 text-muted-foreground flex-shrink-0" />
               <p className="text-sm">
                 <strong>Key improvements:</strong> Added specific metrics (40% reduction in bugs, 60% faster development), 
                 detailed action steps, and clear business impact. This version demonstrates leadership and quantifiable results.
