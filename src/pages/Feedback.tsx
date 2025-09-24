@@ -5,35 +5,22 @@ import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
 import { CheckCircle, AlertCircle, TrendingUp, RotateCcw, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { aiGenerate, ChatMessage } from "@/utils/ai";
+import { useEffect, useState } from "react";
 
 const Feedback = () => {
   const navigate = useNavigate();
 
-  // Mock feedback data
-  const sessionData = {
-    role: "Frontend Developer",
-    level: "Mid-level",
-    duration: "28:34",
-    questionsAnswered: 9,
-    starScore: 72,
-    overallGrade: "B",
-    strengths: [
-      "Clear communication and structured thinking",
-      "Good use of specific examples from past experience", 
-      "Demonstrated technical knowledge and problem-solving skills"
-    ],
-    improvements: [
-      "Include more quantifiable results and impact metrics",
-      "Elaborate more on the 'Result' portion of STAR responses",
-      "Provide more context about team dynamics and collaboration"
-    ],
-    detailedAnalysis: {
-      situation: 85,
-      task: 78,
-      action: 75,
-      result: 58
-    }
+  type Analysis = {
+    summary: string;
+    strengths: string[];
+    improvements: string[];
+    star: { situation: number; task: number; action: number; result: number; };
+    sampleAnswer?: string;
+    hireScore?: number;
   };
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const sampleRewrite = {
     original: "I worked on a project where we had to migrate our frontend from jQuery to React. It was challenging because of the tight deadline. I researched different approaches and led the migration. The project was successful.",
@@ -49,6 +36,43 @@ const Feedback = () => {
     navigate("/onboarding");
   };
 
+  const analyzeTranscript = async () => {
+    setLoading(true);
+    try {
+      let transcript: any[] = [];
+      try { transcript = JSON.parse(localStorage.getItem("prep_transcript") || "[]"); } catch {}
+      const messages: ChatMessage[] = transcript.map((m) => ({ role: m.type === "user" ? "user" : "model", text: m.content }));
+      const profile = localStorage.getItem("prep_profile");
+      const sys = `You are an interview coach. Return STRICT JSON only with this shape:
+{
+  "summary": string,
+  "strengths": string[3],
+  "improvements": string[3],
+  "star": { "situation": number, "task": number, "action": number, "result": number },
+  "sampleAnswer": string,
+  "hireScore": number
+}
+Scores are 0-100. Be concise.`;
+      const text = await aiGenerate(sys + `\nProfile: ${profile || "unknown"}. Analyze the transcript.`, messages);
+      const jsonText = (() => {
+        const start = text.indexOf("{");
+        const end = text.lastIndexOf("}");
+        return start >= 0 && end > start ? text.slice(start, end + 1) : "";
+      })();
+      const parsed = JSON.parse(jsonText) as Analysis;
+      setAnalysis(parsed);
+    } catch (e) {
+      setAnalysis(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    analyzeTranscript();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -56,42 +80,47 @@ const Feedback = () => {
       <div className="container mx-auto px-6 py-8 max-w-6xl">
         {/* Session Summary */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Session Complete!</h1>
-              <p className="text-muted-foreground">
-                Here's your personalized feedback for the {sessionData.role} interview
-              </p>
+              <h1 className="text-3xl font-bold text-foreground">Session Complete</h1>
+              <p className="text-muted-foreground">AI‑generated feedback based on your full transcript.</p>
             </div>
-            <div className="text-sm text-muted-foreground">Grade: <span className="font-medium text-foreground">{sessionData.overallGrade}</span></div>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" onClick={handleRetrySession}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Retry Session
+              </Button>
+            </div>
           </div>
-
-          <div className="grid md:grid-cols-4 gap-4 mb-8">
+          {!analysis && (
             <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">{sessionData.starScore}%</p>
-                <p className="text-sm text-muted-foreground">STAR Score</p>
+              <CardContent className="p-6 text-center">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-secondary/40 text-xs text-muted-foreground mb-3">Analyzing your interview…</div>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.2s" }} />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.4s" }} />
+                </div>
               </CardContent>
             </Card>
+          )}
+          {analysis?.summary && (
             <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">{sessionData.duration}</p>
-                <p className="text-sm text-muted-foreground">Duration</p>
+              <CardContent className="p-5">
+                <h3 className="text-lg font-semibold mb-2">Overall Summary</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{analysis.summary}</p>
+                {typeof analysis.hireScore === 'number' && (
+                  <div className="mt-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Hire Likelihood</span>
+                      <span className="text-sm text-muted-foreground">{analysis.hireScore}%</span>
+                    </div>
+                    <Progress value={analysis.hireScore} className="h-2" />
+                  </div>
+                )}
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">{sessionData.questionsAnswered}</p>
-                <p className="text-sm text-muted-foreground">Questions</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">{sessionData.level}</p>
-                <p className="text-sm text-muted-foreground">Level</p>
-              </CardContent>
-            </Card>
-          </div>
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -102,48 +131,39 @@ const Feedback = () => {
                 <TrendingUp className="mr-2 h-5 w-5 text-foreground" />
                 STAR Framework Analysis
               </CardTitle>
-              <CardDescription>
-                How well you covered each component of the STAR method
-              </CardDescription>
+              <CardDescription>How well you covered each component of the STAR method</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Situation</span>
-                  <span className="text-sm text-muted-foreground">{sessionData.detailedAnalysis.situation}%</span>
+                  <span className="text-sm text-muted-foreground">{analysis?.star?.situation ?? 0}%</span>
                 </div>
-                <Progress value={sessionData.detailedAnalysis.situation} className="h-2" />
+                <Progress value={analysis?.star?.situation ?? 0} className="h-2" />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Task</span>
-                  <span className="text-sm text-muted-foreground">{sessionData.detailedAnalysis.task}%</span>
+                  <span className="text-sm text-muted-foreground">{analysis?.star?.task ?? 0}%</span>
                 </div>
-                <Progress value={sessionData.detailedAnalysis.task} className="h-2" />
+                <Progress value={analysis?.star?.task ?? 0} className="h-2" />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Action</span>
-                  <span className="text-sm text-muted-foreground">{sessionData.detailedAnalysis.action}%</span>
+                  <span className="text-sm text-muted-foreground">{analysis?.star?.action ?? 0}%</span>
                 </div>
-                <Progress value={sessionData.detailedAnalysis.action} className="h-2" />
+                <Progress value={analysis?.star?.action ?? 0} className="h-2" />
               </div>
               
               <div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm font-medium">Result</span>
-                  <span className="text-sm text-muted-foreground">{sessionData.detailedAnalysis.result}%</span>
+                  <span className="text-sm text-muted-foreground">{analysis?.star?.result ?? 0}%</span>
                 </div>
-                <Progress value={sessionData.detailedAnalysis.result} className="h-2" />
-              </div>
-
-              <div className="pt-4 border-t border-border">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">Overall STAR Score</span>
-                  <span className="text-base font-semibold">{sessionData.starScore}%</span>
-                </div>
+                <Progress value={analysis?.star?.result ?? 0} className="h-2" />
               </div>
             </CardContent>
           </Card>
@@ -159,7 +179,7 @@ const Feedback = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  {sessionData.strengths.map((strength, index) => (
+                  {(analysis?.strengths ?? []).map((strength, index) => (
                     <li key={index} className="flex items-start">
                       <CheckCircle className="mr-2 h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{strength}</span>
@@ -178,7 +198,7 @@ const Feedback = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  {sessionData.improvements.map((improvement, index) => (
+                  {(analysis?.improvements ?? []).map((improvement, index) => (
                     <li key={index} className="flex items-start">
                       <AlertCircle className="mr-2 h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <span className="text-sm">{improvement}</span>
@@ -190,26 +210,17 @@ const Feedback = () => {
           </div>
         </div>
 
-        {/* Sample STAR Rewrite */}
+        {/* Sample STAR Rewrite (AI) */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>Sample STAR Rewrite</CardTitle>
-            <CardDescription>
-              See how one of your answers could be improved using the STAR framework
-            </CardDescription>
+            <CardDescription>AI‑generated concise improvement</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h4 className="font-semibold text-foreground mb-3">Your Original Answer:</h4>
+              <h4 className="font-semibold text-foreground mb-3">Improved Version:</h4>
               <div className="p-4 bg-muted rounded-lg border-l-4 border-muted-foreground">
-                <p className="text-sm italic">{sampleRewrite.original}</p>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Improved STAR Version:</h4>
-              <div className="p-4 bg-muted rounded-lg border-l-4 border-muted-foreground">
-                <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: sampleRewrite.improved }} />
+                <p className="text-sm whitespace-pre-wrap">{analysis?.sampleAnswer || "Re‑run analysis to generate an example."}</p>
               </div>
             </div>
 

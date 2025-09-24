@@ -16,9 +16,12 @@ import {
   Zap,
   ChevronRight,
   PauseCircle,
-  PlayCircle
+  PlayCircle,
+  Menu,
+  X
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { aiGenerate, ChatMessage } from "@/utils/ai";
 
 interface Message {
   id: string;
@@ -29,40 +32,24 @@ interface Message {
 }
 
 const Interview = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "interviewer",
-      content: "Hey! I'm your interviewer today. Let's get started. First question: Can you tell me about yourself and what interests you in this role?",
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   
   const [currentAnswer, setCurrentAnswer] = useState("");
+  const [lastQuestion, setLastQuestion] = useState<string>("");
   const [questionNumber, setQuestionNumber] = useState(1);
   const [sessionTime, setSessionTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  const totalQuestions = 10;
-  const progress = (questionNumber / totalQuestions) * 100;
+  // Adaptive/continuous interview: no hard cap
+  const totalQuestions = 0; // informational only; not used for cap
+  const progress = Math.min(100, questionNumber * 8); // simple visual progress indicator
 
-  // Enhanced mock interview questions
-  const mockQuestions = [
-    "Can you tell me about yourself and what draws you to this frontend developer position?",
-    "Describe a challenging technical project you've worked on. What obstacles did you encounter and how did you overcome them?",
-    "Tell me about a time when you had to learn a new technology or framework quickly for a project. How did you approach it?",
-    "Describe a situation where you had to work with a difficult team member or stakeholder. How did you handle the conflict?",
-    "Walk me through your debugging process when you encounter a complex frontend issue that's affecting user experience.",
-    "Tell me about a time when you had to make a trade-off between perfect code quality and meeting a tight deadline.",
-    "Describe a situation where you received constructive criticism on your code. How did you respond and what did you learn?",
-    "Tell me about a project where you had to collaborate closely with designers and backend developers. What challenges arose?",
-    "Describe a time when you had to advocate for a technical decision to non-technical stakeholders. How did you communicate your position?",
-    "What would you do if you disagreed with an architectural decision made by a senior developer on your team?"
-  ];
+  // No local fallback questions: all questions must be AI-generated
 
   const starTips = [
     {
@@ -101,6 +88,38 @@ const Interview = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Generate the first AI question on mount
+  useEffect(() => {
+    if (messages.length === 0) {
+      (async () => {
+        setIsLoading(true);
+        // show typing indicator
+        setMessages([{ id: "typing-boot", type: "interviewer", content: "", timestamp: new Date(), typing: true }]);
+        try {
+          let profile: any = null;
+          try { profile = JSON.parse(localStorage.getItem("prep_profile") || "null"); } catch {}
+          const system = `You are a friendly, supportive Filipino interviewer.
+Guidelines:
+- Ask exactly ONE question per turn, in 1–3 sentences (natural, conversational).
+- Start with an appropriate opener like "Can you introduce yourself?" If the role fits (sales/retail), mix in simple exercises like "Sell me this pen." when logical.
+- If the candidate struggles in English or asks, freely use Taglish (English + Tagalog) and offer short guidance or clarifying examples before/after the question.
+- Maintain a professional interview tone. Avoid casual chit‑chat or overly personal topics.
+- Keep continuity with the profile and prior answers. No bullet lists. No prefaces like "Next question:"`;
+          const firstQ = await aiGenerate(`${system}\n\nProfile: ${profile ? JSON.stringify(profile) : "unknown"}.\nAsk ONLY the very first interview question now (1–3 sentences). Prefer starting with "Introduce yourself."`, []);
+          const q = firstQ?.trim() || "Pwede bang magpakilala ka muna? Tell me about yourself.";
+          setLastQuestion(q);
+          setMessages([{ id: Date.now().toString(), type: "interviewer", content: q, timestamp: new Date() }]);
+        } catch (e) {
+          setMessages([]);
+          alert("Couldn't reach the AI interviewer. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -131,32 +150,46 @@ const Interview = () => {
     };
     setMessages(prev => [...prev, typingMessage]);
 
-    // Simulate AI processing time
-    setTimeout(() => {
+    try {
+      // Build dynamic prompt using onboarding profile and transcript
+      let profile: any = null;
+      try { profile = JSON.parse(localStorage.getItem("prep_profile") || "null"); } catch {}
+
+      const historyForAi: ChatMessage[] = messages.map((m) => ({
+        role: m.type === "user" ? "user" : "model",
+        text: m.content,
+      }));
+
+      const system = `You are a friendly, supportive Filipino interviewer.
+Guidelines:
+- Ask ONE question per turn (1–3 sentences). Natural tone.
+- Use the candidate's last answer for a relevant follow‑up. Offer short guidance or examples if they seem unsure.
+- If they struggle in English, switch to simple English or Taglish (mix Tagalog), but keep the question clear.
+- Stay professional—avoid small talk; keep questions job‑related.
+- Keep continuity with profile/company context. No lists, no multiple questions.`;
+
+      const prompt = `${system}\n\nProfile: ${profile ? JSON.stringify(profile) : "unknown"}.\nLast asked question: ${lastQuestion || "(none)"}.\nGiven the transcript so far, respond as the interviewer with ONLY one utterance: either a brief acknowledgement then a single follow‑up question, or the next logical question. Length 1–3 sentences, conversational, Taglish allowed.`;
+
+      const nextQ = await aiGenerate(prompt, historyForAi.concat([{ role: "user", text: currentAnswer }]));
+
       setMessages(prev => prev.filter(msg => !msg.typing));
-      
-      if (questionNumber < mockQuestions.length) {
-        const nextQuestion: Message = {
-          id: (Date.now() + 2).toString(),
-          type: "interviewer",
-          content: mockQuestions[questionNumber],
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, nextQuestion]);
-        setQuestionNumber(prev => prev + 1);
-      } else {
-        const endMessage: Message = {
-          id: (Date.now() + 2).toString(),
-          type: "interviewer",
-          content: "Excellent work! That concludes our interview session. I'll now analyze all your responses and provide comprehensive feedback with detailed STAR framework scoring. Click 'View Results' to see your personalized report.",
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, endMessage]);
-      }
+      const nextQuestion: Message = {
+        id: (Date.now() + 2).toString(),
+        type: "interviewer",
+        content: (nextQ || "Please share more details relevant to this role."),
+        timestamp: new Date()
+      };
+      setLastQuestion(nextQuestion.content);
+      setMessages(prev => [...prev, nextQuestion]);
+      setQuestionNumber(prev => prev + 1);
+    } catch (e) {
+      setMessages(prev => prev.filter(msg => !msg.typing));
+      alert("Couldn't reach the AI interviewer. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 2000);
+      // Persist transcript for feedback analysis
+      try { localStorage.setItem("prep_transcript", JSON.stringify(messages)); } catch {}
+    }
   };
 
   const handleEndSession = () => {
@@ -171,7 +204,7 @@ const Interview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       
       {/* Session Controls */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-xl">
@@ -180,8 +213,7 @@ const Interview = () => {
             <div className="flex items-center space-x-4 text-sm">
               <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
                 <MessageSquare className="h-4 w-4 text-primary" />
-                <span className="font-medium">{questionNumber}</span>
-                <span className="text-muted-foreground">of {totalQuestions}</span>
+                <span className="font-medium">Question {questionNumber}</span>
               </div>
               <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
                 <Clock className="h-4 w-4 text-primary" />
@@ -190,6 +222,15 @@ const Interview = () => {
             </div>
             
             <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDetails(true)}
+                className="hover:bg-secondary/50"
+                aria-label="Open details"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -216,16 +257,14 @@ const Interview = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-6xl">
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 h-full">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-6xl flex-1 overflow-hidden">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 h-full min-h-0">
           {/* Chat Column */}
-          <div className="lg:col-span-2 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80 shadow-elegant h-[60vh] sm:h-[62vh]">
-              <CardContent className="relative p-0 flex-1">
+            <div className="lg:col-span-2 flex flex-col h-full min-h-0">
+            <Card className="flex-1 flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80 shadow-elegant h-full min-h-[320px]">
+              <CardContent className="p-0 flex-1 flex min-h-0">
                 {/* Scrollable messages viewport */}
-                <div className="absolute inset-0 overflow-y-auto no-scrollbar p-4 sm:p-6">
-                  {/* Subtle background pattern */}
-                  <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)", backgroundSize: "22px 22px" }} />
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                   <div className="relative space-y-8">
               {messages.map((message) => (
                 <div key={message.id} className={`flex items-end ${message.type === "user" ? "justify-end" : "justify-start"}`}>
@@ -319,51 +358,86 @@ const Interview = () => {
             </div>
           </div>
 
-          {/* Tips Sidebar */}
-          <div className="hidden lg:flex flex-col h-full gap-4">
-            <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
-              <CardHeader>
-                <CardTitle>Conversation Tips</CardTitle>
-                <CardDescription>Keep it natural and specific</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
-                  <span>Answer like you would in real life. Skip jargon unless needed.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
-                  <span>Mention concrete facts: numbers, timelines, team size, tools.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
-                  <span>If you need a moment, say it—then structure your thoughts.</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-gradient-to-br from-card to-card/80 flex-1 min-h-0">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">STAR Guide</CardTitle>
-                <CardDescription>Use if it helps, ignore if not</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 overflow-auto h-full">
-                {starTips.map((tip, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-primary/20 to-primary-glow/20 rounded-lg flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">{tip.letter}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground text-sm">{tip.word}</div>
-                      <div className="text-xs text-muted-foreground leading-relaxed">{tip.tip}</div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+          {/* Sidebar removed; details available via overlay */}
         </div>
       </div>
+
+      {showDetails && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" onClick={() => setShowDetails(false)} />
+          <div className="absolute right-0 top-0 h-full w-[88vw] sm:w-[420px] bg-card border-l border-border shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
+              <div className="font-semibold">Interview Details</div>
+              <Button variant="ghost" size="icon" onClick={() => setShowDetails(false)} aria-label="Close details">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4 overflow-y-auto">
+              <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Candidate Profile</CardTitle>
+                  <CardDescription>From onboarding</CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm space-y-2">
+                  {(() => {
+                    let profile: any = null;
+                    try { profile = JSON.parse(localStorage.getItem("prep_profile") || "null"); } catch {}
+                    return (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="text-muted-foreground">Field</div>
+                        <div className="truncate">{profile?.field || "—"}</div>
+                        <div className="text-muted-foreground">Role</div>
+                        <div className="truncate">{profile?.role || "—"}</div>
+                        <div className="text-muted-foreground">Level</div>
+                        <div className="truncate capitalize">{profile?.level || "—"}</div>
+                        <div className="text-muted-foreground">Company</div>
+                        <div className="truncate">{profile?.company || "—"}</div>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
+                <CardHeader>
+                  <CardTitle>Conversation Tips</CardTitle>
+                  <CardDescription>Keep it professional and specific</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
+                    <span>Focus on STAR: Situation, Task, Action, Result.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
+                    <span>Use simple English/Taglish if needed; stay job‑relevant.</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">STAR Guide</CardTitle>
+                  <CardDescription>Quick reference</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {starTips.map((tip, index) => (
+                    <div key={index} className="flex items-start space-x-3 p-3 rounded-lg bg-secondary/30 border border-border/30">
+                      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-primary/20 to-primary-glow/20 rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">{tip.letter}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground text-sm">{tip.word}</div>
+                        <div className="text-xs text-muted-foreground leading-relaxed">{tip.tip}</div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

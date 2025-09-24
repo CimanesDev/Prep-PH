@@ -21,6 +21,7 @@ const Onboarding = () => {
   const [field, setField] = useState("");
   const [role, setRole] = useState("");
   const [level, setLevel] = useState("");
+  const [company, setCompany] = useState("");
   const [roleQuery, setRoleQuery] = useState("");
   
   const navigate = useNavigate();
@@ -76,10 +77,15 @@ const Onboarding = () => {
     }
   };
 
+  const totalSteps = 5;
+
   const handleNext = () => {
-    if (step < 4) {
+    if (step < totalSteps) {
       setStep(step + 1);
     } else {
+      // Persist lightweight profile locally for AI prompts
+      const profile = { field, role, level, company, hasResume: !!(resumeData.filename || resumeData.content) };
+      try { localStorage.setItem("prep_profile", JSON.stringify(profile)); } catch {}
       // Navigate to interview
       navigate("/interview");
     }
@@ -92,7 +98,7 @@ const Onboarding = () => {
   };
 
   const handleSkip = () => {
-    if (step < 4) {
+    if (step < totalSteps) {
       setStep(step + 1);
     }
   };
@@ -105,8 +111,10 @@ const Onboarding = () => {
       case 2:
         return field !== "";
       case 3:
-        return role !== "" && level !== "";
-      case 4:
+        return role !== ""; // level optional
+      case 4: // company optional
+        return true;
+      case 5:
         return true;
       default:
         return false;
@@ -269,7 +277,7 @@ const Onboarding = () => {
               </div>
 
               <div>
-                <Label>Experience Level</Label>
+                <Label>Experience Level <span className="text-xs text-muted-foreground">(optional)</span></Label>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[
                     { value: "internship", label: "Internship" },
@@ -307,6 +315,23 @@ const Onboarding = () => {
         return (
           <div className="space-y-4">
             <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">Target Company (optional)</h2>
+              <p className="text-sm text-muted-foreground">Add a company to tailor questions to their context.</p>
+            </div>
+            <div className="max-w-xl mx-auto space-y-3">
+              <Label htmlFor="company">Company</Label>
+              <Input id="company" placeholder="e.g., Jollibee, Globe, Google" value={company} onChange={(e)=>setCompany(e.target.value)} />
+            </div>
+            <div className="flex items-center justify-center">
+              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-4">
+            <div className="text-center mb-4">
               <h2 className="text-xl font-bold text-foreground mb-2">Ready to start?</h2>
               <p className="text-sm text-muted-foreground">
                 Review your setup and begin your mock interview session
@@ -334,7 +359,11 @@ const Onboarding = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Level</p>
-                    <p className="font-medium capitalize">{level}</p>
+                    <p className="font-medium capitalize">{level || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Company</p>
+                    <p className="font-medium">{company || "Not specified"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -360,10 +389,10 @@ const Onboarding = () => {
         {/* Compact Progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium">Step {step} of 4</p>
-            <p className="text-sm text-muted-foreground">{Math.round((step / 4) * 100)}% complete</p>
+            <p className="text-sm font-medium">Step {step} of {totalSteps}</p>
+            <p className="text-sm text-muted-foreground">{Math.round((step / totalSteps) * 100)}% complete</p>
           </div>
-          <Progress value={(step / 4) * 100} className="h-1.5" />
+          <Progress value={(step / totalSteps) * 100} className="h-1.5" />
         </div>
 
         {/* Main Content - Single Column, no sidebar */}
@@ -388,8 +417,8 @@ const Onboarding = () => {
             disabled={!canProceed()}
             className="rounded-full bg-foreground text-background hover:bg-foreground/90"
           >
-            {step === 4 ? "Start Interview" : "Next"}
-            {step < 4 && <ArrowRight className="ml-2 h-4 w-4" />}
+            {step === totalSteps ? "Start Interview" : "Next"}
+            {step < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>
         </div>
       </div>
