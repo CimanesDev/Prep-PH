@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Progress } from "@/components/ui/progress";
+import Navbar from "@/components/Navbar";
 import { ArrowLeft, ArrowRight, Upload, FileText } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -116,21 +117,21 @@ const Onboarding = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Upload your resume (optional)</h2>
-              <p className="text-muted-foreground">
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">Upload your resume (optional)</h2>
+              <p className="text-sm text-muted-foreground">
                 Share your background so we can generate personalized interview questions
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4">
               <Card className={`cursor-pointer border-2 ${resumeData.type === "upload" ? "border-primary" : "border-border"}`}
                     onClick={() => setResumeData({...resumeData, type: "upload"})}>
-                <CardContent className="p-6 text-center">
-                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Upload PDF/DOCX</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <CardContent className="p-4 text-center">
+                  <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold mb-2 text-sm">Upload PDF/DOCX</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
                     Upload your resume file directly
                   </p>
                   {resumeData.type === "upload" && (
@@ -153,10 +154,10 @@ const Onboarding = () => {
 
               <Card className={`cursor-pointer border-2 ${resumeData.type === "text" ? "border-primary" : "border-border"}`}
                     onClick={() => setResumeData({...resumeData, type: "text"})}>
-                <CardContent className="p-6 text-center">
-                  <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Paste as text</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <CardContent className="p-4 text-center">
+                  <FileText className="h-6 w-6 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold mb-2 text-sm">Paste as text</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
                     Copy and paste your resume content
                   </p>
                   {resumeData.type === "text" && (
@@ -164,7 +165,7 @@ const Onboarding = () => {
                       placeholder="Paste your resume content here..."
                       value={resumeData.content}
                       onChange={(e) => setResumeData({...resumeData, content: e.target.value})}
-                      className="mt-2 min-h-32"
+                      className="mt-2 min-h-24 text-sm"
                       onClick={(e) => e.stopPropagation()}
                     />
                   )}
@@ -179,10 +180,10 @@ const Onboarding = () => {
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Select your field</h2>
-              <p className="text-muted-foreground">
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">Select your field</h2>
+              <p className="text-sm text-muted-foreground">
                 Choose the industry or function you're interviewing for
               </p>
             </div>
@@ -218,15 +219,15 @@ const Onboarding = () => {
 
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Select role & level</h2>
-              <p className="text-muted-foreground">
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">Select role & level</h2>
+              <p className="text-sm text-muted-foreground">
                 Specify your target role and experience level
               </p>
             </div>
 
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-4">
               <div>
                 <Label htmlFor="role">Role</Label>
                 <Input
@@ -304,16 +305,16 @@ const Onboarding = () => {
 
       case 4:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Ready to start?</h2>
-              <p className="text-muted-foreground">
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-bold text-foreground mb-2">Ready to start?</h2>
+              <p className="text-sm text-muted-foreground">
                 Review your setup and begin your mock interview session
               </p>
             </div>
 
             <Card className="max-w-md mx-auto">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Resume</p>
@@ -354,38 +355,29 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to dashboard
-          </Link>
-          <div className="flex items-center space-x-2">
-            <Link to="/" className="text-lg font-semibold text-foreground hover:opacity-90">Prep PH</Link>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div className="mb-8">
+      <Navbar />
+      <div className="container mx-auto px-6 py-6 max-w-6xl">
+        {/* Compact Progress */}
+        <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium">Step {step} of 4</p>
             <p className="text-sm text-muted-foreground">{Math.round((step / 4) * 100)}% complete</p>
           </div>
-          <Progress value={(step / 4) * 100} className="h-2" />
+          <Progress value={(step / 4) * 100} className="h-1.5" />
         </div>
 
-        {/* Step Content */}
-        <div className="mb-8">
+        {/* Main Content - Single Column, no sidebar */}
+        <div className="mb-6">
           {renderStep()}
         </div>
 
-        {/* Navigation */}
+        {/* Compact Navigation */}
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
             onClick={handleBack}
             disabled={step === 1}
+            className="rounded-full"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
@@ -394,6 +386,7 @@ const Onboarding = () => {
           <Button
             onClick={handleNext}
             disabled={!canProceed()}
+            className="rounded-full bg-foreground text-background hover:bg-foreground/90"
           >
             {step === 4 ? "Start Interview" : "Next"}
             {step < 4 && <ArrowRight className="ml-2 h-4 w-4" />}

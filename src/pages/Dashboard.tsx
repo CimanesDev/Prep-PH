@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Navbar from "@/components/Navbar";
 import { 
   TrendingUp, 
   Calendar, 
@@ -81,116 +82,82 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Link to="/" className="text-xl font-semibold text-foreground hover:opacity-90">Prep PH</Link>
-              </div>
-            </div>
+      <Navbar />
 
-            <div className="flex items-center space-x-4">
-              <Link to="/onboarding">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Session
-                </Button>
-              </Link>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Avatar>
-                <AvatarFallback>{user.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8 max-w-7xl">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+      <div className="container mx-auto px-6 py-6 max-w-6xl">
+        {/* Compact Welcome Section */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-1">
             Welcome back, {user.name.split(" ")[0]}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Track your interview preparation progress and continue improving your skills.
           </p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
+        {/* Compact Stats Overview */}
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
+          <Card className="border-border/50 bg-card/80">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Sessions Completed</p>
-                  <p className="text-2xl font-bold text-foreground">{user.sessionsCompleted}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Sessions</p>
+                  <p className="text-xl font-bold text-foreground">{user.sessionsCompleted}</p>
                 </div>
-                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                  <Target className="h-6 w-6 text-foreground" />
-                </div>
+                <Target className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border-border/50 bg-card/80">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Average Score</p>
-                  <p className="text-2xl font-bold text-foreground">{user.averageScore}%</p>
+                  <p className="text-xs font-medium text-muted-foreground">Avg Score</p>
+                  <p className="text-xl font-bold text-foreground">{user.averageScore}%</p>
                 </div>
-                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-6 w-6 text-foreground" />
-                </div>
+                <BarChart3 className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border-border/50 bg-card/80">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
-                  <p className="text-2xl font-bold text-foreground">{user.streak} days</p>
+                  <p className="text-xs font-medium text-muted-foreground">Streak</p>
+                  <p className="text-xl font-bold text-foreground">{user.streak} days</p>
                 </div>
-                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-foreground" />
-                </div>
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="border-border/50 bg-card/80">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold text-foreground">4</p>
+                  <p className="text-xs font-medium text-muted-foreground">This Month</p>
+                  <p className="text-xl font-bold text-foreground">4</p>
                 </div>
-                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-foreground" />
-                </div>
+                <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* Recent Sessions */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
+            <Card className="border-border/50 bg-card/80">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Recent Sessions</CardTitle>
-                    <CardDescription>Your latest interview practice sessions</CardDescription>
+                    <CardTitle className="text-lg">Recent Sessions</CardTitle>
+                    <CardDescription className="text-sm">Your latest interview practice sessions</CardDescription>
                   </div>
                   <Link to="/onboarding">
-                    <Button size="sm">
+                    <Button size="sm" className="rounded-full">
                       <Plus className="mr-2 h-4 w-4" />
                       New Session
                     </Button>
@@ -200,7 +167,7 @@ const Dashboard = () => {
               <CardContent className="p-0">
                 <div className="divide-y divide-border">
                   {recentSessions.map((session) => (
-                    <div key={session.id} className="p-6 hover:bg-muted/30 transition-colors">
+                    <div key={session.id} className="p-4 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">

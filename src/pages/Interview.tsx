@@ -172,33 +172,24 @@ const Interview = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Premium Header */}
+      
+      {/* Session Controls */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-xl">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link to="/onboarding" className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Link>
-              <div className="flex items-center space-x-3">
-                <Link to="/" className="text-lg sm:text-xl font-bold hover:opacity-90">Prep PH</Link>
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <span className="font-medium">{questionNumber}</span>
+                <span className="text-muted-foreground">of {totalQuestions}</span>
+              </div>
+              <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-medium">{formatTime(sessionTime)}</span>
               </div>
             </div>
-
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{questionNumber}</span>
-                  <span className="text-muted-foreground">of {totalQuestions}</span>
-                </div>
-                <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{formatTime(sessionTime)}</span>
-                </div>
-              </div>
-              
+            
+            <div className="flex items-center space-x-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -229,11 +220,13 @@ const Interview = () => {
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 h-full">
           {/* Chat Column */}
           <div className="lg:col-span-2 flex flex-col h-full">
-            <Card className="flex-1 flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80 shadow-elegant">
-              <CardContent className="relative p-4 sm:p-6 overflow-y-auto h-[58vh] min-h-[58vh] max-h-[58vh] sm:h-[60vh] sm:min-h-[60vh] sm:max-h-[60vh]">
-            {/* Subtle background pattern */}
-            <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)", backgroundSize: "22px 22px" }} />
-            <div className="relative space-y-8">
+            <Card className="flex-1 flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80 shadow-elegant h-[60vh] sm:h-[62vh]">
+              <CardContent className="relative p-0 flex-1">
+                {/* Scrollable messages viewport */}
+                <div className="absolute inset-0 overflow-y-auto no-scrollbar p-4 sm:p-6">
+                  {/* Subtle background pattern */}
+                  <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)", backgroundSize: "22px 22px" }} />
+                  <div className="relative space-y-8">
               {messages.map((message) => (
                 <div key={message.id} className={`flex items-end ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                   {/* Avatar */}
@@ -288,8 +281,9 @@ const Interview = () => {
                 </div>
               ))}
               
-              <div ref={messagesEndRef} />
-            </div>
+                    <div ref={messagesEndRef} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -303,7 +297,7 @@ const Interview = () => {
                       value={currentAnswer}
                       onChange={(e) => setCurrentAnswer(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className="min-h-[48px] sm:min-h-[56px] max-h-40 resize-y bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors flex-1"
+                      className="h-14 sm:h-16 resize-none bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors flex-1"
                       disabled={isLoading}
                       maxLength={500}
                     />

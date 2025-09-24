@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Navbar from "@/components/Navbar";
 import { 
   CheckCircle, 
   Users, 
@@ -11,10 +12,14 @@ import {
   Brain, 
   TrendingUp,
   PlayCircle,
-  Star,
   MessageSquare,
   Clock,
-  Award
+  Award,
+  HelpCircle,
+  FileText,
+  Globe,
+  Shield,
+  Gift
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useRef, useCallback, useEffect } from "react";
@@ -117,87 +122,41 @@ const Landing = () => {
     { value: "50+", label: "Role Types" }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Software Engineer at Google",
-      content: "Prep helped me nail my behavioral interviews. The STAR feedback was incredibly detailed and actionable.",
-      rating: 5
-    },
-    {
-      name: "Marcus Johnson", 
-      role: "Product Manager at Meta",
-      content: "The AI questions felt so realistic. I was completely prepared for my actual interviews.",
-      rating: 5
-    },
-    {
-      name: "Elena Rodriguez",
-      role: "Data Scientist at Netflix", 
-      content: "Finally, an interview coach that understands technical roles. The progress tracking kept me motivated.",
-      rating: 5
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/70 supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-6 py-3">
-          <div className="flex items-center justify-between rounded-full border border-border/60 bg-card/60 px-4 py-2 shadow-sm">
-            <div className="flex items-center">
-              <Link to="/" className="inline-flex items-center group">
-                <span className="text-xl sm:text-2xl font-extrabold tracking-tight transition-colors group-hover:text-foreground">
-                  Prep <span className="text-primary">PH</span>
-                </span>
-              </Link>
-            </div>
-            <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-              <Link to="/" className="hover:text-foreground transition-colors">Overview</Link>
-              <Link to="/onboarding" className="hover:text-foreground transition-colors">Practice</Link>
-              <Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
-            </nav>
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <Link to="/login">
-                <Button variant="ghost" className="hover:bg-secondary/50 rounded-full px-4">Log in</Button>
-              </Link>
-              <Link to="/onboarding">
-                <Button className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-4">
-                  Start Practicing
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-screen px-6 overflow-hidden flex items-start pt-24 md:pt-32">
+      <section className="relative px-6 py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
         {/* Background Effects (neutralized to remove dark blue cast) */}
         <div className="absolute inset-0 bg-gradient-to-br from-muted/10 via-transparent to-muted/10"></div>
         <div className="absolute top-20 right-20 w-72 h-72 bg-muted/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 left-20 w-96 h-96 bg-muted/20 rounded-full blur-3xl"></div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-              <span className="text-primary text-5xl sm:text-6xl md:text-7xl lg:text-8xl">PREP</span><span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">ARE to unleash </span>
-              <span className="block">your inner spark </span>
-            </h1>
+            <div className="text-center">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
+                <span className="text-primary text-5xl sm:text-6xl md:text-7xl lg:text-8xl">PREP</span><span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">ARE to </span><span className="text-foreground text-4xl sm:text-5xl md:text-6xl lg:text-7xl">shine</span>
+              </h1>
+              <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold mb-6 sm:mb-8">
+                Think <span className="text-primary">sharper</span>. Grow <span className="text-primary">smarter</span>.
+              </p>
             
-            <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-muted-foreground mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed">
             Prepare for every interview scenario with realistic practice, receive clear, actionable feedback to improve instantly, and build the confidence you need to shine—quickly, easily, and all in one place.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/onboarding">
-                <Button size="lg" className="px-8 py-4 text-lg bg-foreground text-background hover:bg-foreground/90">
-                  <PlayCircle className="mr-2 h-5 w-5" />
+                <Button size="lg" className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg bg-foreground text-background hover:bg-foreground/90">
+                  <PlayCircle className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
                   Start Practicing Free
                 </Button>
               </Link>
               <Link to="/interview">
-                <Button variant="outline" size="lg" className="px-8 py-4 text-lg border-border/50 hover:bg-secondary/50">
-                  <MessageSquare className="mr-2 h-5 w-5" />
+                <Button variant="outline" size="lg" className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg border-border/50 hover:bg-secondary/50">
+                  <MessageSquare className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
                   Watch Demo
                 </Button>
               </Link>
@@ -207,7 +166,7 @@ const Landing = () => {
       </section>
 
       {/* Horizontal gallery strip that reacts to vertical scroll */}
-      <section className="relative py-6 px-0" style={{ marginTop: "-25vh" }}>
+      <section className="relative py-6 px-0">
         <div
           ref={stripRef}
           className="w-full overflow-hidden no-scrollbar relative"
@@ -377,37 +336,70 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="relative py-24 px-6">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold text-foreground mb-6">
-              Trusted by top performers
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              See how Prep has helped candidates land roles at leading companies
+      {/* FAQ */}
+      <section className="relative py-24 px-6 bg-gradient-to-br from-muted/5 to-transparent">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Everything you need to know about Prep PH
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="relative group border-border/50 bg-gradient-to-br from-card to-card/80 hover:from-card/90 hover:to-card transition-all duration-500 hover:shadow-elegant">
-                <CardContent className="p-8">
-                  <div className="flex items-center mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 text-primary fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-foreground mb-6 leading-relaxed italic">
-                    "{testimonial.content}"
-                  </p>
-                  <div>
-                    <div className="font-semibold text-foreground">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="group border-border/50 bg-card/80 hover:bg-card/90 transition-all duration-300 hover:shadow-elegant hover:border-primary/20">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors">How does the AI interview practice work?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Our AI analyzes your resume and target role to generate personalized interview questions. 
+                  It adapts to your responses and provides real-time feedback using the STAR framework.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="group border-border/50 bg-card/80 hover:bg-card/90 transition-all duration-300 hover:shadow-elegant hover:border-primary/20">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors">Do I need to upload my resume?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  No, resume upload is optional. You can still practice with AI-generated questions 
+                  by selecting your field and role manually.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="group border-border/50 bg-card/80 hover:bg-card/90 transition-all duration-300 hover:shadow-elegant hover:border-primary/20">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors">What industries and roles are supported?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  We support a wide range of industries including tech, healthcare, finance, BPO, 
+                  hospitality, retail, and many more. Perfect for the diverse Philippine job market.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="group border-border/50 bg-card/80 hover:bg-card/90 transition-all duration-300 hover:shadow-elegant hover:border-primary/20">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors">How accurate is the STAR framework feedback?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Our AI provides structured feedback based on the STAR framework principles, 
+                  helping you identify areas for improvement in your Situation, Task, Action, and Result responses.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="group border-border/50 bg-card/80 hover:bg-card/90 transition-all duration-300 hover:shadow-elegant hover:border-primary/20 md:col-span-2">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors">Is Prep PH completely free?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Yes! Prep PH is completely free to use. You can practice unlimited interviews, 
+                  get AI feedback, and access all core features at no cost. Paid options only provide 
+                  additional premium features for power users.
+                </p>
+                <div className="mt-4 inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                  Always Free
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -435,11 +427,63 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-border/50 py-16 px-6">
-        <div className="container mx-auto max-w-4xl text-center">
-          <div className="flex items-center justify-center space-x-3 mb-6">
+      <footer className="relative border-t border-border/50 py-16 px-6 bg-muted/10">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="md:col-span-2">
+              <div className="flex items-center mb-4">
+                <span className="text-2xl font-extrabold tracking-tight">
+                  Prep <span className="text-primary">PH</span>
+                </span>
+              </div>
+              <p className="text-muted-foreground text-sm max-w-md">
+                AI-powered interview preparation platform designed for the Philippine job market. 
+                Practice, improve, and succeed in your next interview.
+              </p>
+            </div>
+            
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <div className="space-y-2 text-sm">
+                <Link to="/onboarding" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Start Practicing
+                </Link>
+                <Link to="/dashboard" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Dashboard
+                </Link>
+                <Link to="/interview" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Mock Interview
+                </Link>
+              </div>
+            </div>
+            
+            {/* Support */}
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <div className="space-y-2 text-sm">
+                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Help Center
+                </a>
+                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Contact Us
+                </a>
+                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">
+                  Privacy Policy
+                </a>
+              </div>
+            </div>
           </div>
-          <p className="text-muted-foreground">© 2025 Prep PH. Made by @CimanesDev.</p>
+          
+          <div className="border-t border-border/50 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-muted-foreground text-sm">
+              © 2025 Prep PH. Made by @CimanesDev.
+            </p>
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+              <span className="text-xs text-muted-foreground">Built for Filipino job seekers</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

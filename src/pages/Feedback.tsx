@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle, AlertCircle, TrendingUp, RotateCcw, Save } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import { CheckCircle, AlertCircle, TrendingUp, RotateCcw, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const Feedback = () => {
@@ -50,31 +51,7 @@ const Feedback = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link to="/interview" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to interview
-              </Link>
-              <Link to="/" className="text-lg font-semibold text-foreground hover:opacity-90">Prep PH</Link>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" onClick={handleRetrySession}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Retry Session
-              </Button>
-              <Button onClick={handleSaveToDashboard}>
-                <Save className="mr-2 h-4 w-4" />
-                Save to Dashboard
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Navbar />
 
       <div className="container mx-auto px-6 py-8 max-w-6xl">
         {/* Session Summary */}
