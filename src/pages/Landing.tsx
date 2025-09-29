@@ -433,6 +433,7 @@ const Landing = () => {
             {/* Brand */}
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
+                <img src="/images/preplogo.png" alt="PrepPH" className="h-7 w-auto mr-2" />
                 <span className="text-2xl font-extrabold tracking-tight">
                   Prep <span className="text-primary">PH</span>
                 </span>

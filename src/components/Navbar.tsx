@@ -14,6 +14,7 @@ const Navbar = ({ showBackButton = false, backTo = "/", backText = "Back" }: Nav
         <div className="flex items-center justify-between rounded-full border border-border/60 bg-card/60 px-4 py-2 shadow-sm">
           <div className="flex items-center">
             <Link to="/" className="inline-flex items-center group">
+              <img src="/images/preplogo.png" alt="PrepPH" className="h-6 w-auto sm:h-8 mr-2" />
               <span className="text-xl sm:text-2xl font-extrabold tracking-tight transition-colors group-hover:text-foreground">
                 Prep <span className="text-primary">PH</span>
               </span>

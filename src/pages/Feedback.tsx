@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Navbar from "@/components/Navbar";
 import { CheckCircle, AlertCircle, TrendingUp, RotateCcw, Save } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { aiGenerate, ChatMessage } from "@/utils/ai";
+import { buildCompactProfile, trimMessages } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { getLatestRecording, clearLatestRecording } from "@/lib/idb";
 
 const Feedback = () => {
   const navigate = useNavigate();
@@ -21,6 +23,8 @@ const Feedback = () => {
   };
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
 
   const sampleRewrite = {
     original: "I worked on a project where we had to migrate our frontend from jQuery to React. It was challenging because of the tight deadline. I researched different approaches and led the migration. The project was successful.",
@@ -38,37 +42,157 @@ const Feedback = () => {
 
   const analyzeTranscript = async () => {
     setLoading(true);
+    setError(null);
     try {
       let transcript: any[] = [];
       try { transcript = JSON.parse(localStorage.getItem("prep_transcript") || "[]"); } catch {}
-      const messages: ChatMessage[] = transcript.map((m) => ({ role: m.type === "user" ? "user" : "model", text: m.content }));
+      if (!Array.isArray(transcript) || transcript.length === 0) {
+        setError("No interview answers found to analyze.");
+        setAnalysis(null);
+        return;
+      }
+      // Use entire transcript but lightly trim each entry to avoid extremes
+      // Cap total payload to avoid 503; if very long, summarize older parts inline
+      let messages: ChatMessage[] = (transcript as any[]).map((m) => ({
+        role: m.type === "user" ? "user" : "model",
+        text: String(m.content || "").slice(0, 500)
+      }));
+      const MAX_ITEMS = 40;
+      if (messages.length > MAX_ITEMS) {
+        const head = messages.slice(0, 5);
+        const tail = messages.slice(-30);
+        const middleSummary = { role: "model" as const, text: `Summary: ${head.map(m=>m.text).join(" ").slice(0, 240)} ... (omitted middle) ...` };
+        messages = [...head, middleSummary, ...tail];
+      }
       const profile = localStorage.getItem("prep_profile");
-      const sys = `You are an interview coach. Return STRICT JSON only with this shape:
-{
-  "summary": string,
-  "strengths": string[3],
-  "improvements": string[3],
-  "star": { "situation": number, "task": number, "action": number, "result": number },
-  "sampleAnswer": string,
-  "hireScore": number
-}
-Scores are 0-100. Be concise.`;
-      const text = await aiGenerate(sys + `\nProfile: ${profile || "unknown"}. Analyze the transcript.`, messages);
-      const jsonText = (() => {
-        const start = text.indexOf("{");
-        const end = text.lastIndexOf("}");
-        return start >= 0 && end > start ? text.slice(start, end + 1) : "";
+      const compactProfile = (() => {
+        try { return buildCompactProfile(JSON.parse(profile || "null")); } catch { return "unknown"; }
       })();
-      const parsed = JSON.parse(jsonText) as Analysis;
-      setAnalysis(parsed);
+      const sys = `You are an expert interview coach.
+Return STRICT JSON (no markdown, no text outside JSON) with keys:
+{"summary":string,"strengths":string[3],"improvements":string[3],"star":{"situation":number,"task":number,"action":number,"result":number},"sampleAnswer":string,"hireScore":number}
+Rules: Be concise, scores 0-100, sampleAnswer must follow STAR and be 4-8 sentences.`;
+      let text = await aiGenerate(sys + `\nProfile: ${compactProfile}. Analyze the transcript.`, messages, {
+        // Use the default app model (same as interview). No model override.
+        maxOutputTokens: 120,
+        temperature: 0.4,
+        timeoutMs: 9000
+      });
+      // If still empty after first pass, retry with smaller payload
+      if (!text) {
+        const small = messages.slice(-16).map(m => ({ ...m, text: m.text.slice(0, 220) }));
+        text = await aiGenerate(sys + `\nProfile: ${compactProfile}. Analyze the transcript.`, small, {
+          maxOutputTokens: 100,
+          temperature: 0.4,
+          timeoutMs: 8000
+        });
+      }
+      // Sanitize responses that include code fences or truncated/invalid JSON
+      const stripFences = (s: string) => {
+        const fenceStart = s.indexOf("```");
+        if (fenceStart >= 0) {
+          const after = s.slice(fenceStart + 3);
+          const second = after.indexOf("```");
+          if (second >= 0) {
+            return after.slice(after.indexOf("\n") + 1, second).trim();
+          }
+          // No closing fence; drop the prefix and continue
+          return after.slice(after.indexOf("\n") + 1).trim();
+        }
+        return s;
+      };
+      const balancedJsonSlice = (s: string) => {
+        const start = s.indexOf("{");
+        if (start < 0) return "";
+        let buf = s.slice(start);
+        // Try to cut off at the last brace if present
+        const last = buf.lastIndexOf("}");
+        if (last >= 0) buf = buf.slice(0, last + 1);
+        // Balance braces/brackets if truncated
+        const openCurly = (buf.match(/\{/g) || []).length;
+        const closeCurly = (buf.match(/\}/g) || []).length;
+        const openSq = (buf.match(/\[/g) || []).length;
+        const closeSq = (buf.match(/\]/g) || []).length;
+        buf = buf + "}".repeat(Math.max(0, openCurly - closeCurly)) + "]".repeat(Math.max(0, openSq - closeSq));
+        return buf;
+      };
+      const removeTrailingCommas = (s: string) => {
+        // Remove trailing commas before } or ] across the text
+        return s.replace(/,\s*([}\]])/g, "$1");
+      };
+      const extractLikelyJson = (s: string) => {
+        // Greedy match first opening brace to last closing brace
+        const first = s.indexOf("{");
+        const last = s.lastIndexOf("}");
+        if (first >= 0 && last > first) return s.slice(first, last + 1);
+        return s;
+      };
+      let cleaned = stripFences(text);
+      let jsonText = balancedJsonSlice(extractLikelyJson(cleaned));
+      jsonText = removeTrailingCommas(jsonText);
+      let parsed: Analysis | null = null;
+      try {
+        parsed = JSON.parse(jsonText) as Analysis;
+      } catch {}
+
+      const missing = !parsed || !parsed.summary || !parsed.strengths || !parsed.improvements || !parsed.star;
+      if (missing) {
+        // Retry once with slightly higher tokens and stricter framing
+        const sysRetry = `Return ONLY valid JSON with the exact keys required. No extra text.`;
+        const retry = await aiGenerate((sys + "\n" + sysRetry) + `\nProfile: ${compactProfile}. Analyze the transcript.`, messages.slice(-12), {
+          maxOutputTokens: 160,
+          temperature: 0.35,
+          timeoutMs: 12000
+        });
+        cleaned = stripFences(retry);
+        jsonText = balancedJsonSlice(extractLikelyJson(cleaned));
+        jsonText = removeTrailingCommas(jsonText);
+        try { parsed = JSON.parse(jsonText) as Analysis; } catch {}
+      }
+
+      if (parsed) {
+        // Coerce and fill defaults to avoid runtime nulls
+        const safe: Analysis = {
+          summary: parsed.summary || "",
+          strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 3) : [],
+          improvements: Array.isArray(parsed.improvements) ? parsed.improvements.slice(0, 3) : [],
+          star: {
+            situation: Math.max(0, Math.min(100, Number(parsed.star?.situation ?? 0))) || 0,
+            task: Math.max(0, Math.min(100, Number(parsed.star?.task ?? 0))) || 0,
+            action: Math.max(0, Math.min(100, Number(parsed.star?.action ?? 0))) || 0,
+            result: Math.max(0, Math.min(100, Number(parsed.star?.result ?? 0))) || 0,
+          },
+          sampleAnswer: parsed.sampleAnswer || "",
+          hireScore: typeof parsed.hireScore === 'number' ? Math.max(0, Math.min(100, parsed.hireScore)) : undefined,
+        };
+        setAnalysis(safe);
+      } else {
+        console.error("Analysis parse failed", { raw: text, extracted: jsonText });
+        setError("Couldn't generate analysis. Please try again.");
+        setAnalysis(null);
+      }
     } catch (e) {
       setAnalysis(null);
+      setError("Analysis service is currently unavailable. Please try again.");
+      console.error("Feedback analysis failed:", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Load latest recording if available
+    (async () => {
+      try {
+        const blob = await getLatestRecording();
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          setRecordingUrl(url);
+          // Clear after load to avoid stale storage growth
+          try { await clearLatestRecording(); } catch {}
+        }
+      } catch {}
+    })();
     analyzeTranscript();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -85,14 +209,17 @@ Scores are 0-100. Be concise.`;
               <h1 className="text-3xl font-bold text-foreground">Session Complete</h1>
               <p className="text-muted-foreground">AI‑generated feedback based on your full transcript.</p>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="outline" onClick={handleRetrySession}>
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Retry Session
-              </Button>
-            </div>
+            {typeof analysis?.hireScore === 'number' && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Hire Likelihood</span>
+                <div className="min-w-[120px]">
+                  <Progress value={analysis.hireScore} className="h-2" />
+                </div>
+                <span className="text-sm font-medium">{analysis.hireScore}%</span>
+              </div>
+            )}
           </div>
-          {!analysis && (
+          {loading && (
             <Card>
               <CardContent className="p-6 text-center">
                 <div className="inline-flex items-center px-3 py-1 rounded-full bg-secondary/40 text-xs text-muted-foreground mb-3">Analyzing your interview…</div>
@@ -101,6 +228,14 @@ Scores are 0-100. Be concise.`;
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.2s" }} />
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0.4s" }} />
                 </div>
+              </CardContent>
+            </Card>
+          )}
+          {!loading && error && (
+            <Card>
+              <CardContent className="p-5 text-center">
+                <div className="text-sm text-muted-foreground mb-3">{error}</div>
+                <Button variant="outline" onClick={analyzeTranscript}>Retry analysis</Button>
               </CardContent>
             </Card>
           )}
@@ -210,29 +345,29 @@ Scores are 0-100. Be concise.`;
           </div>
         </div>
 
-        {/* Sample STAR Rewrite (AI) */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Sample STAR Rewrite</CardTitle>
-            <CardDescription>AI‑generated concise improvement</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Improved Version:</h4>
-              <div className="p-4 bg-muted rounded-lg border-l-4 border-muted-foreground">
-                <p className="text-sm whitespace-pre-wrap">{analysis?.sampleAnswer || "Re‑run analysis to generate an example."}</p>
+        {/* Recording Download (if present) */}
+        {recordingUrl && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Recording</CardTitle>
+              <CardDescription>Your mock interview video</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <video className="w-full rounded" controls src={recordingUrl} />
+              <div className="flex justify-end">
+                <a
+                  href={recordingUrl}
+                  download={`prep-interview-${new Date().toISOString().replace(/[:.]/g,'-')}.webm`}
+                  className="inline-flex items-center px-4 py-2 text-sm rounded-md border border-border hover:bg-secondary/50"
+                >
+                  Download Recording
+                </a>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <div className="flex items-center p-4 bg-muted rounded-lg border border-border">
-              <CheckCircle className="mr-3 h-5 w-5 text-muted-foreground flex-shrink-0" />
-              <p className="text-sm">
-                <strong>Key improvements:</strong> Added specific metrics (40% reduction in bugs, 60% faster development), 
-                detailed action steps, and clear business impact. This version demonstrates leadership and quantifiable results.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Sample STAR Rewrite removed per request */}
 
         {/* Next Steps */}
         <Card className="mt-8">
@@ -255,6 +390,7 @@ Scores are 0-100. Be concise.`;
           </CardContent>
         </Card>
       </div>
+      
     </div>
   );
 };

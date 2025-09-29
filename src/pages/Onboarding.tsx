@@ -77,14 +77,15 @@ const Onboarding = () => {
     }
   };
 
-  const totalSteps = 5;
+  const totalSteps = 4;
 
   const handleNext = () => {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
       // Persist lightweight profile locally for AI prompts
-      const profile = { field, role, level, company, hasResume: !!(resumeData.filename || resumeData.content) };
+      const finalRole = role || roleQuery.trim();
+      const profile = { field, role: finalRole, level, company, hasResume: !!(resumeData.filename || resumeData.content) };
       try { localStorage.setItem("prep_profile", JSON.stringify(profile)); } catch {}
       // Navigate to interview
       navigate("/interview");
@@ -103,6 +104,13 @@ const Onboarding = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (canProceed()) handleNext();
+    }
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
@@ -111,7 +119,7 @@ const Onboarding = () => {
       case 2:
         return field !== "";
       case 3:
-        return role !== ""; // level optional
+        return (role !== "" || roleQuery.trim() !== ""); // level optional; allow typed role
       case 4: // company optional
         return true;
       case 5:
@@ -180,9 +188,7 @@ const Onboarding = () => {
                 </CardContent>
               </Card>
             </div>
-            <div className="flex items-center justify-center">
-              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
-            </div>
+            
           </div>
         );
 
@@ -203,14 +209,14 @@ const Onboarding = () => {
                 value={field}
                 onChange={(e) => setField(e.target.value)}
               />
-              <div className="text-xs text-muted-foreground">Suggestions</div>
+              <div className="text-xs text-muted-foreground">Popular fields</div>
               <div className="flex flex-wrap gap-2">
                 {fields.slice(0, 12).map((f) => (
                   <Button
                     key={f}
                     type="button"
                     variant={field === f ? "default" : "outline"}
-                    className={`${field === f ? "" : "border-border/50"}`}
+                    className={`${field === f ? "" : "border-border/50"} rounded-full text-xs`}
                     onClick={() => setField(f)}
                   >
                     {f}
@@ -219,9 +225,7 @@ const Onboarding = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center">
-              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
-            </div>
+            
           </div>
         );
 
@@ -231,7 +235,7 @@ const Onboarding = () => {
             <div className="text-center mb-4">
               <h2 className="text-xl font-bold text-foreground mb-2">Select role & level</h2>
               <p className="text-sm text-muted-foreground">
-                Specify your target role and experience level
+                Specify your target role, experience level, and optional company
               </p>
             </div>
 
@@ -255,24 +259,12 @@ const Onboarding = () => {
                         type="button"
                         size="sm"
                         variant={role === r ? "default" : "outline"}
-                        className={`text-sm ${role === r ? "" : "border-border/50"}`}
+                        className={`text-sm ${role === r ? "" : "border-border/50"} rounded-full`}
                         onClick={() => setRole(r)}
                       >
                         {r}
                       </Button>
                     ))}
-                  {roleQuery.trim().length > 0 && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={role === roleQuery ? "default" : "outline"}
-                      className={`text-sm ${role === roleQuery ? "" : "border-border/50"}`}
-                      onClick={() => setRole(roleQuery.trim())}
-                      aria-label={`Use ${roleQuery} as role`}
-                    >
-                      Use “{roleQuery.trim()}”
-                    </Button>
-                  )}
                 </div>
               </div>
 
@@ -293,7 +285,7 @@ const Onboarding = () => {
                       type="button"
                       size="sm"
                       variant={level === opt.value ? "default" : "outline"}
-                      className={`text-sm ${level === opt.value ? "" : "border-border/50"}`}
+                      className={`text-sm ${level === opt.value ? "" : "border-border/50"} rounded-full`}
                       onClick={() => setLevel(opt.value)}
                       aria-label={opt.label}
                     >
@@ -303,32 +295,19 @@ const Onboarding = () => {
                 </div>
               </div>
               
+              <div>
+                <Label htmlFor="company">Target Company <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                <Input id="company" placeholder="e.g., Jollibee, Globe, Google" value={company} onChange={(e)=>setCompany(e.target.value)} className="mt-2" />
+                <p className="text-xs text-muted-foreground mt-1">Adding a company helps tailor tone and examples.</p>
+              </div>
+              
             </div>
 
-            <div className="flex items-center justify-center">
-              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
-            </div>
+            
           </div>
         );
 
       case 4:
-        return (
-          <div className="space-y-4">
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-foreground mb-2">Target Company (optional)</h2>
-              <p className="text-sm text-muted-foreground">Add a company to tailor questions to their context.</p>
-            </div>
-            <div className="max-w-xl mx-auto space-y-3">
-              <Label htmlFor="company">Company</Label>
-              <Input id="company" placeholder="e.g., Jollibee, Globe, Google" value={company} onChange={(e)=>setCompany(e.target.value)} />
-            </div>
-            <div className="flex items-center justify-center">
-              <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip this step</Button>
-            </div>
-          </div>
-        );
-
-      case 5:
         return (
           <div className="space-y-4">
             <div className="text-center mb-4">
@@ -355,7 +334,7 @@ const Onboarding = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Role</p>
-                    <p className="font-medium">{role}</p>
+                    <p className="font-medium">{role || roleQuery}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Level</p>
@@ -368,12 +347,6 @@ const Onboarding = () => {
                 </div>
               </CardContent>
             </Card>
-
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Your session will include 8-10 tailored questions with detailed feedback
-              </p>
-            </div>
           </div>
         );
 
@@ -383,16 +356,16 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" onKeyDown={handleKeyDown}>
       <Navbar />
       <div className="container mx-auto px-6 py-6 max-w-6xl">
         {/* Compact Progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium">Step {step} of {totalSteps}</p>
-            <p className="text-sm text-muted-foreground">{Math.round((step / totalSteps) * 100)}% complete</p>
+            <p className="text-xs text-muted-foreground">{Math.round((step / totalSteps) * 100)}% complete</p>
           </div>
-          <Progress value={(step / totalSteps) * 100} className="h-1.5" />
+          <Progress value={(step / totalSteps) * 100} className="h-1.5 rounded-full" />
         </div>
 
         {/* Main Content - Single Column, no sidebar */}
@@ -401,27 +374,35 @@ const Onboarding = () => {
         </div>
 
         {/* Compact Navigation */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={step === 1}
-            className="rounded-full"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
+        <div className="sticky bottom-0 left-0 right-0 bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={step === 1}
+              className="rounded-full"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
 
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className="rounded-full bg-foreground text-background hover:bg-foreground/90"
-          >
-            {step === totalSteps ? "Start Interview" : "Next"}
-            {step < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}
-          </Button>
+            <div className="flex items-center gap-2">
+              {step < totalSteps && (
+                <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">Skip</Button>
+              )}
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+                className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+              >
+                {step === totalSteps ? "Start Interview" : "Next"}
+                {step < totalSteps && <ArrowRight className="ml-2 h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+      
     </div>
   );
 };

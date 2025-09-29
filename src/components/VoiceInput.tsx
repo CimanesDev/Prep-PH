@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, VolumeX } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 
 interface VoiceInputProps {
   onTranscript: (transcript: string) => void;
   disabled?: boolean;
   className?: string;
+  autoStart?: boolean;
+  compact?: boolean; // compact mode keeps layout stable; shows fewer adornments
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const VoiceInput = ({ onTranscript, disabled = false, className = "" }: VoiceInputProps) => {
-  const [isRecording, setIsRecording] = useState(false);
+const VoiceInput = ({ onTranscript, disabled = false, className = "", autoStart = false, compact = false, size = 'md' }: VoiceInputProps) => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   
@@ -33,7 +35,6 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }: VoiceInp
       }
     },
     onStart: () => {
-      setIsRecording(true);
       // Simulate audio level for visual feedback
       const interval = setInterval(() => {
         setAudioLevel(Math.random() * 100);
@@ -42,12 +43,10 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }: VoiceInp
       return () => clearInterval(interval);
     },
     onEnd: () => {
-      setIsRecording(false);
       setAudioLevel(0);
     },
     onError: (error) => {
       console.error('Speech recognition error:', error);
-      setIsRecording(false);
       setAudioLevel(0);
       
       // Auto-retry for network errors (up to 3 times)
@@ -61,6 +60,14 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }: VoiceInp
       }
     }
   });
+
+  // Auto-start listening on mount if requested
+  useEffect(() => {
+    if (autoStart && !disabled && !isListening) {
+      toggleListening();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, disabled]);
 
   // Handle transcript updates
   useEffect(() => {
@@ -92,50 +99,39 @@ const VoiceInput = ({ onTranscript, disabled = false, className = "" }: VoiceInp
       <Button
         type="button"
         variant={isListening ? "default" : "outline"}
-        size="icon"
+        size={size === 'lg' ? 'default' : 'icon'}
         onClick={handleToggleRecording}
         disabled={disabled}
-        className={`relative transition-all duration-200 ${
-          isListening 
-            ? "bg-red-500 hover:bg-red-600 text-white animate-pulse" 
-            : "hover:bg-secondary/50"
-        }`}
+        className={`relative transition-none ${isListening ? "bg-red-500 hover:bg-red-600 text-white" : "hover:bg-secondary/50"} ${size === 'lg' ? 'px-4 py-6 rounded-xl' : ''}`}
         aria-label={isListening ? "Stop recording" : "Start recording"}
       >
         {isListening ? (
-          <MicOff className="h-4 w-4" />
+          <MicOff className={`${size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'}`} />
         ) : (
-          <Mic className="h-4 w-4" />
+          <Mic className={`${size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'}`} />
         )}
-        
-        {/* Audio level indicator */}
-        {isListening && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+        {!compact && isListening && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
         )}
       </Button>
 
-      {/* Recording status */}
       {isListening && (
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <div className={`flex items-center ${size === 'lg' ? 'text-base' : 'text-sm'} text-muted-foreground ${compact ? "ml-1" : "space-x-2"}`}>
           <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span>Recording...</span>
+            <div className={`${size === 'lg' ? 'w-2.5 h-2.5' : 'w-2 h-2'} bg-red-500 rounded-full`} />
+            {!compact && <span>Recording...</span>}
           </div>
-          
-          {/* Audio level bars */}
-          <div className="flex items-center space-x-1">
-            {[1, 2, 3, 4].map((bar) => (
-              <div
-                key={bar}
-                className={`w-1 h-3 rounded-full transition-all duration-100 ${
-                  audioLevel > bar * 20 ? 'bg-red-500' : 'bg-muted'
-                }`}
-                style={{
-                  height: `${Math.max(4, (audioLevel / 100) * 12)}px`
-                }}
-              />
-            ))}
-          </div>
+          {!compact && (
+            <div className="flex items-center space-x-1">
+              {[1, 2, 3, 4].map((bar) => (
+                <div
+                  key={bar}
+                  className={`w-1 h-3 rounded-full ${audioLevel > bar * 20 ? 'bg-red-500' : 'bg-muted'}`}
+                  style={{ height: `${Math.max(4, (audioLevel / 100) * 12)}px` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
