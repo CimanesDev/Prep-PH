@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import VoiceInput from "@/components/VoiceInput";
 import { 
   ArrowLeft, 
   Send, 
@@ -18,7 +19,9 @@ import {
   PauseCircle,
   PlayCircle,
   Menu,
-  X
+  X,
+  Mic,
+  MicOff
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { aiGenerate, ChatMessage } from "@/utils/ai";
@@ -41,6 +44,7 @@ const Interview = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -203,6 +207,14 @@ Guidelines:
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setCurrentAnswer(prev => prev + (prev ? " " : "") + transcript);
+  };
+
+  const toggleVoiceMode = () => {
+    setIsVoiceMode(!isVoiceMode);
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       
@@ -330,29 +342,84 @@ Guidelines:
             <div className="mt-4">
               <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
                 <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-end gap-2 sm:gap-3">
-                    <Textarea
-                      placeholder="Type your message..."
-                      value={currentAnswer}
-                      onChange={(e) => setCurrentAnswer(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      className="h-14 sm:h-16 resize-none bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors flex-1"
-                      disabled={isLoading}
-                      maxLength={500}
-                    />
-                    <Button 
-                      onClick={handleSendAnswer} 
-                      disabled={!currentAnswer.trim() || isLoading}
-                      className="shrink-0 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-hover hover:to-primary text-primary-foreground shadow-lg"
-                      aria-label="Send message"
-                    >
-                      {isLoading ? (
-                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
+                  {/* Voice/Text mode toggle */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant={isVoiceMode ? "outline" : "ghost"}
+                        size="sm"
+                        onClick={toggleVoiceMode}
+                        className="text-xs"
+                      >
+                        {isVoiceMode ? <Mic className="h-3 w-3 mr-1" /> : <MicOff className="h-3 w-3 mr-1" />}
+                        {isVoiceMode ? "Voice Mode" : "Text Mode"}
+                      </Button>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentAnswer.length}/500 characters
+                    </div>
                   </div>
+
+                  {isVoiceMode ? (
+                    /* Voice Input Mode */
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-center p-4 border-2 border-dashed border-border/50 rounded-lg bg-muted/20">
+                        <VoiceInput
+                          onTranscript={handleVoiceTranscript}
+                          disabled={isLoading}
+                          className="flex-col space-y-2"
+                        />
+                      </div>
+                      <div className="flex items-end gap-2 sm:gap-3">
+                        <Textarea
+                          placeholder="Your transcribed answer will appear here..."
+                          value={currentAnswer}
+                          onChange={(e) => setCurrentAnswer(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className="h-14 sm:h-16 resize-none bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors flex-1"
+                          disabled={isLoading}
+                          maxLength={500}
+                        />
+                        <Button 
+                          onClick={handleSendAnswer} 
+                          disabled={!currentAnswer.trim() || isLoading}
+                          className="shrink-0 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-hover hover:to-primary text-primary-foreground shadow-lg"
+                          aria-label="Send message"
+                        >
+                          {isLoading ? (
+                            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Text Input Mode */
+                    <div className="flex items-end gap-2 sm:gap-3">
+                      <Textarea
+                        placeholder="Type your message..."
+                        value={currentAnswer}
+                        onChange={(e) => setCurrentAnswer(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className="h-14 sm:h-16 resize-none bg-secondary/30 border-border/50 focus:border-primary/50 transition-colors flex-1"
+                        disabled={isLoading}
+                        maxLength={500}
+                      />
+                      <Button 
+                        onClick={handleSendAnswer} 
+                        disabled={!currentAnswer.trim() || isLoading}
+                        className="shrink-0 bg-gradient-to-r from-primary to-primary-glow hover:from-primary-hover hover:to-primary text-primary-foreground shadow-lg"
+                        aria-label="Send message"
+                      >
+                        {isLoading ? (
+                          <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -411,6 +478,14 @@ Guidelines:
                   <div className="flex items-start gap-2">
                     <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
                     <span>Use simple English/Taglish if needed; stay job‑relevant.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Mic className="h-4 w-4 text-primary mt-0.5" />
+                    <span>Voice mode works best in quiet environments with clear speech.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="h-4 w-4 text-primary mt-0.5" />
+                    <span>Voice input requires internet connection and microphone permissions.</span>
                   </div>
                 </CardContent>
               </Card>
